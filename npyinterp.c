@@ -1,8 +1,14 @@
+/***
+ * Fast interpolation for numpy arrays (see README)
+ *
+ * Author: Johannes Buchner (C) 2013-2015
+ */
 
 #include<stdio.h>
 #include<Python.h>
 #include<numpy/arrayobject.h>
 #include<assert.h>
+
 npy_intp binary_search(const double key, const double arr [], const npy_intp len)
 {
     npy_intp imin = 0;
@@ -27,7 +33,27 @@ npy_intp binary_search(const double key, const double arr [], const npy_intp len
 #define adouble double
 #define bdouble double
 
-int interpolate(const void * leftp, const void * rightp, void * zp, int m,
+/**
+ * Main interpolation+integration function.
+ * 
+ * Uses the data arrays xp, yp to interpolate values (yp) defined at certain positions (xp).
+ * It computes the integral from xa to xb using linear, piecewise interpolation.
+ * This can be done for many values of xa, xb, which are defined as bins:
+ *   leftp, rightp define the borders of the bins (of length m)
+ *   zp  is where the results of the interpolation+integration should be stored.
+ * 
+ * Parameters regarding where to interpolate:
+ * leftp:  double array: coordinate of lower bin border
+ * rightp: double array: coordinate of upper bin border
+ * zp:     double array: storage for the result. 
+ * m:      int: size of each of the three arrays
+ * Parameters regarding the data used for interpolation:
+ * xp:     double array: coordinate
+ * yp:     double array: value
+ * n:      double array: size of the lookup table
+ * 
+ */
+int interpolate_integrate(const void * leftp, const void * rightp, void * zp, int m,
 	const void * xp, const void * yp, int n) {
 	int i;
 	int j;
@@ -79,7 +105,9 @@ int interpolate(const void * leftp, const void * rightp, void * zp, int m,
 		wright = (right[i] - x[k]) / (x[k+1] - x[k]);
 		IFVERBOSE printf(" at <%f|%f|%f> weight %f\n", x[j],left[i], x[j+1], wleft);
 		IFVERBOSE printf(" at <%f|%f|%f> weight %f\n", x[k],right[i],x[k+1], wright);
-		/* y-values are samples of the integral. */
+		/* y-values are samples of the values. */
+		/* do a line integration between x[j] and left[i+1]
+		 * and between x[k] and right[i] */
 		yleft  = (y[j+1] - y[j]) * wleft  + y[j];
 		yright = (y[k+1] - y[k]) * wright + y[k];		
 		IFVERBOSE printf(" interpolating <%f|%f|%f>\n", y[j], yleft,  y[j+1]);
@@ -88,98 +116,4 @@ int interpolate(const void * leftp, const void * rightp, void * zp, int m,
 	}
 	return 0;
 }
-
-double trace2(const void * indatav, int rowcount, int colcount) {
-    //void cfun(const double * indata, int rowcount, int colcount, double * outdata) {
-    const double * indata = (double *) indatav;
-    int n = rowcount;
-    int i;
-    double sum = 0.;
-    if (colcount < n)
-    	n = colcount;
-    printf("Here we go!\n");
-    for (i = 0; i < n; ++i) {
-        sum += indata[i * rowcount + i];
-    }
-    printf("Done!\n");
-    return sum;
-}
-
-/*
-double trace(PyArrayObject * array) {
-	double sum;
-	int i, n;
-
-	printf("array: %p -- %c\n", array, *(char*)array);
-	if (array->nd != 2 || array->descr->type_num != PyArray_DOUBLE) {
-		PyErr_SetString(PyExc_ValueError,
-		"array must be two-dimensional and of type float");
-		return -1;
-	}
-
-	n = array->dimensions[0];
-	if (n > array->dimensions[1])
-		n = array->dimensions[1];
-
-	printf("dimensions: %i %i\n", (int)array->dimensions[0], (int)array->dimensions[1]);
-	sum = 0.;
-	for (i = 0; i < n; i++) {
-		printf("  accessing %i\n", i);
-		sum += *(double *)(array->data + i*array->strides[0] + i*array->strides[1]);
-	}
-	return sum;
-}*/
-
-
-/*
-npy_intp PyArray_CountNonzero(PyArrayObject* self)
-{
-    PyArray_NonzeroFunc* nonzero = PyArray_DESCR(self)->f->nonzero;
-
-    NpyIter* iter;
-    NpyIter_IterNextFunc *iternext;
-    char** dataptr;
-    npy_intp* strideptr,* innersizeptr;
-
-    if (PyArray_SIZE(self) == 0) {
-        return 0;
-    }
-
-    iter = NpyIter_New(self, NPY_ITER_READONLY|
-                             NPY_ITER_EXTERNAL_LOOP|
-                             NPY_ITER_REFS_OK,
-                        NPY_KEEPORDER, NPY_NO_CASTING,
-                        NULL);
-    if (iter == NULL) {
-        return -1;
-    }
-
-    iternext = NpyIter_GetIterNext(iter, NULL);
-    if (iternext == NULL) {
-        NpyIter_Deallocate(iter);
-        return -1;
-    }
-    dataptr = NpyIter_GetDataPtrArray(iter);
-    strideptr = NpyIter_GetInnerStrideArray(iter);
-    innersizeptr = NpyIter_GetInnerLoopSizePtr(iter);
-
-    do {
-        char* data = *dataptr;
-        npy_intp stride = *strideptr;
-        npy_intp count = *innersizeptr;
-
-        while (count--) {
-            if (nonzero(data, self)) {
-                ++nonzero_count;
-            }
-            data += stride;
-        }
-
-    } while(iternext(iter));
-
-    NpyIter_Deallocate(iter);
-
-    return nonzero_count;
-}
-*/
 
