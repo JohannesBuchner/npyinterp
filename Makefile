@@ -1,9 +1,9 @@
-
+PYTHON := python
 CC := gcc
 CFLAGS += -O3 -fPIC -std=c99 -Wall -Wextra  
 # compile with the system Python:
-INCDIRS = -I /usr/lib64/python2.7/site-packages/numpy/core/include/  -I/usr/include/python2.7/
-# or, instead compile with the Python in Sherpa:
+INCDIRS += -I $($(PYTHON) -m site --user-site)/numpy/
+INCDIRS += -I $($(PYTHON) -c 'import sysconfig; print(sysconfig.get_paths()["include"])')
 # INCDIRS = -I /opt/ciao-4.6/ots/lib/python2.7/site-packages/numpy/core/include/ -I /opt/ciao-4.6/ots/include/python2.7/
 
 all: npyinterp.so
@@ -22,4 +22,3 @@ clean:
 	rm *.so
 
 .PHONY: all allplatforms clean
-
