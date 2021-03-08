@@ -21,12 +21,11 @@ def run2():
 def test():
 
 	z = run()
-	print z, len(r), len(y)
+	print(z, len(r), len(y))
 	z_check = run2()
-	print z_check
+	print(z_check)
 	assert numpy.allclose(z, z_check)
 	
 
 if __name__ == '__main__':
 	test()
-
