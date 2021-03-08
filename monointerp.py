@@ -1,8 +1,13 @@
 import numpy
-from ctypes import *
+import os
+from ctypes import cdll, c_int
 from numpy.ctypeslib import ndpointer
 
-lib = cdll.LoadLibrary('npyinterp.so')
+try:
+	lib = cdll.LoadLibrary('npyinterp.so')
+except OSError:
+	lib = cdll.LoadLibrary(os.path.join(os.path.dirname(__file__), 'npyinterp.so'))
+	
 lib.interpolate_integrate.argtypes = [
 	ndpointer(dtype=numpy.float64, ndim=1, flags='C_CONTIGUOUS'), 
 	ndpointer(dtype=numpy.float64, ndim=1, flags='C_CONTIGUOUS'), 
